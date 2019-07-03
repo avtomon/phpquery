@@ -1,5 +1,5 @@
 {
-    "name":"cagartner/phpquery",
+    "name":"avtomon/phpquery",
     "type":"library",
     "description":"PHP5.3+ namespaced version of phpQuery with enhanced CSS support",
     "version":"0.9.10",
@@ -15,13 +15,11 @@
             "email":"tobiasz.cudnik@gmail.com",
             "homepage":"https://github.com/TobiaszCudnik",
             "role":"Developer"
-        }
-        ,
+        },
         {
             "name":"didier Belot",
             "role":"Packager"
-        }
-        ,
+        },
         {
             "name":"Greg Payne",
             "role":"Packager"
