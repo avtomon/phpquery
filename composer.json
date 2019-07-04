@@ -28,6 +28,9 @@
         "sabberworm/php-css-parser": "8.1.*"
     },
     "autoload": {
+        "files": [
+            "src/functions.php"
+        ],
         "psr-4": {
             "PhpQuery\\": "src/"
         }

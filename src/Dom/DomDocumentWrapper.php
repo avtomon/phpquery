@@ -485,7 +485,7 @@ class DomDocumentWrapper
     {
         $this->loadMarkupReset();
         $this->isXML = true;
-        // check agains XHTML in contentType or markup
+        // check against XHTML in contentType or markup
         $isContentTypeXHTML = $this->isXHTML();
         $isMarkupXHTML = $this->isXHTML($markup);
         if ($isContentTypeXHTML || $isMarkupXHTML) {
@@ -646,7 +646,7 @@ class DomDocumentWrapper
      * @param $source
      * @param null $sourceCharset
      *
-     * @return array
+     * @return \DOMNode[]
      *
      * @throws PhpQueryException
      */

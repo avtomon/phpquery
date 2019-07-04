@@ -80,25 +80,6 @@ abstract class PhpQuery
     public static $enableCssShorthand = false;
 
     /**
-     * @param string $ns
-     * @param string $func
-     */
-    public static function use_function($ns = '\\', $func = 'pq') : void
-    {
-        if ($ns{0} !== '\\') {
-            $ns = '\\' . $ns;
-        }
-        if (!function_exists($ns . '\\' . $func)) {
-            if ($ns === '\\') {
-                eval("function $func(\$a, \$b = '') { return \\PhpQuery\\PhpQuery::pq(\$a, \$b); }");
-            } else {
-                $ns = substr($ns, 1);
-                eval("namespace $ns { function $func(\$a, \$b = '') { return \\PhpQuery\\PhpQuery::pq(\$a, \$b); } }");
-            }
-        }
-    }
-
-    /**
      * Multi-purpose function.
      * Use pq() as shortcut.
      *
@@ -324,7 +305,7 @@ abstract class PhpQuery
     /**
      * Sets default document to $id. Document has to be loaded prior
      * to using this method.
-     * $id can be retrived via getDocumentID() or getDocumentIDRef().
+     * $id can be retrieved via getDocumentID() or getDocumentIDRef().
      *
      * @param string $id
      */
@@ -347,7 +328,7 @@ abstract class PhpQuery
 
     /**
      * Returns document with id $id or last used as PhpQueryObject.
-     * $id can be retrived via getDocumentID() or getDocumentIDRef().
+     * $id can be retrieved via getDocumentID() or getDocumentIDRef().
      * Chainable.
      *
      * @param null $id
@@ -485,22 +466,6 @@ abstract class PhpQuery
         $contentType = $charset ? ";charset=$charset" : '';
 
         return self::newDocumentFile($file, "application/xhtml+xml{$contentType}");
-    }
-
-    /**
-     * Unload all or specified document from memory.
-     *
-     * @param null $id
-     */
-    public static function unloadDocuments($id = null) : void
-    {
-        if (isset($id) && $id = self::getDocumentID($id)) {
-            unset(phpQuery::$documents[$id]);
-        } else {
-            foreach (phpQuery::$documents as $k => $v) {
-                unset(phpQuery::$documents[$k]);
-            }
-        }
     }
 
     /**

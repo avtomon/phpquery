@@ -1,7 +1,6 @@
 <?php
 
-use PhpQuery\PhpQuery;
-use PhpQuery\PhpQueryObject;
+namespace PhpQuery;
 
 /**
  * @param $arg
@@ -9,7 +8,7 @@ use PhpQuery\PhpQueryObject;
  *
  * @return PhpQueryObject
  *
- * @throws Exception
+ * @throws \Exception
  */
 function pq($arg, $context = NULL) : PhpQueryObject
 {
