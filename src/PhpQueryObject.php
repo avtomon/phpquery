@@ -345,7 +345,7 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
             $this->elementsBackup = $this->elements;
         }
 
-        $notSimpleSelector = [' ', '>', '~', '+', '/',];
+        $notSimpleSelector = [' ', '>', '~', '+', '/'];
         if (!is_array($selectors)) {
             $selectors = $this->parseSelector($selectors);
         }
@@ -356,7 +356,6 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
             if (!$selector) {
                 break;
             }
-
             // avoid first space or /
             if (\in_array($selector[0], $notSimpleSelector, true)) {
                 $selector = array_slice($selector, 1);
@@ -366,8 +365,8 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                 $break = false;
                 foreach ($selector as $s) {
                     if (!($node instanceof \DOMElement)) {
-                        // all besides \DOMElement
-                        if ($s[0] === '[') {
+                        // all besides DOMElement
+                        if (strpos($s, '[') === 0) {
                             $attr = trim($s, '[]');
                             if (mb_strpos($attr, '=')) {
                                 [$attr, $val] = explode('=', $attr);
@@ -378,76 +377,82 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         } else {
                             $break = true;
                         }
-                    } elseif ($s[0] === '#') {
-                        if ($node->getAttribute('id') !== substr($s, 1)) {
+                    } else {
+                        // DOMElement only
+                        // ID
+                        if (strpos($s, '#') === 0 && $node->getAttribute('id') !== substr($s, 1)) {
                             $break = true;
-                        }
-                        // CLASSES
-                    } else if ($s[0] === '.') {
-                        if (!$this->matchClasses($s, $node)) {
-                            $break = true;
-                        }
-                    } else if ($s[0] === '[') {
-                        // strip side brackets
-                        $attr = trim($s, '[]');
-                        if (mb_strpos($attr, '=')) {
-                            [$attr, $val] = explode('=', $attr);
-                            $val = self::unQuote($val);
-                            if ($attr === 'nodeType') {
-                                if ($val !== $node->nodeType) {
-                                    $break = true;
-                                }
-                            } else if ($this->isRegexp($attr)) {
-                                $val = extension_loaded('mbstring')
-                                && PhpQuery::$mbstringSupport ? quotemeta(trim($val, '"\''))
-                                    : preg_quote(trim($val, '"\''), '@');
-                                // switch last character
-                                switch (substr($attr, -1)) {
-                                    // quotemeta used insted of preg_quote
-                                    // http://code.google.com/p/phpquery/issues/detail?id=76
-                                    case '^':
-                                        $pattern = '^' . $val;
-                                        break;
-                                    case '*':
-                                        $pattern = '.*' . $val . '.*';
-                                        break;
-                                    case '$':
-                                        $pattern = '.*' . $val . '$';
-                                        break;
-                                }
-                                // cut last character
-                                $attr = substr($attr, 0, -1);
-                                $isMatch = null;
-                                if (isset($pattern)) {
-                                    $isMatch = extension_loaded('mbstring') && PhpQuery::$mbstringSupport
-                                        ? mb_ereg_match($pattern, $node->getAttribute($attr))
-                                        : preg_match("@{$pattern}@", $node->getAttribute($attr));
-                                }
-                                if (!$isMatch) {
-                                    $break = true;
-                                }
-                            } elseif ($node->getAttribute($attr) !== $val) {
+                            // CLASSES
+                        } elseif (strpos($s, '.') === 0) {
+                            if (!$this->matchClasses($s, $node)) {
                                 $break = true;
                             }
-                        } elseif (!$node->hasAttribute($attr)) {
-                            $break = true;
-                            // PSEUDO CLASSES
-                        }
-                    } else if (trim($s)) {
-                        if ($s !== '*') {
-                            if (isset($node->tagName)) {
-                                if ($node->tagName !== $s) {
-                                    $break = true;
-                                }
-                            } else if ($s === 'html' && !$this->isRoot($node)) {
-                                $break = true;
-                            }
-                        }
-                        // AVOID NON-SIMPLE SELECTORS
-                    } else if (\in_array($s, $notSimpleSelector, true)) {
-                        $break = true;
-                    }
+                            // ATTRS
+                        } elseif (strpos($s, '[') === 0) {
+                            // strip side brackets
+                            $attr = trim($s, '[]');
 
+                            if (mb_strpos($attr, '=')) {
+                                [$attr, $val] = explode('=', $attr);
+                                $val = self::unQuote($val);
+                                if ($attr === 'nodeType') {
+                                    if ($val !== $node->nodeType) {
+                                        $break = true;
+                                    }
+                                } else if ($this->isRegexp($attr)) {
+                                    $pattern = '';
+                                    $val = extension_loaded('mbstring') && phpQuery::$mbstringSupport
+                                        ? quotemeta(trim($val, '"\''))
+                                        : preg_quote(trim($val, '"\''), '@');
+                                    // switch last character
+                                    switch (substr($attr, -1)) {
+                                        // quotemeta used insted of preg_quote
+                                        // http://code.google.com/p/phpquery/issues/detail?id=76
+                                        case '^':
+                                            $pattern = '^' . $val;
+                                            break;
+                                        case '*':
+                                            $pattern = '.*' . $val . '.*';
+                                            break;
+                                        case '$':
+                                            $pattern = '.*' . $val . '$';
+                                            break;
+                                    }
+                                    // cut last character
+                                    $attr = substr($attr, 0, -1);
+                                    if ($pattern) {
+                                        $isMatch = extension_loaded('mbstring') && phpQuery::$mbstringSupport
+                                            ? mb_ereg_match($pattern, $node->getAttribute($attr))
+                                            : preg_match("@{$pattern}@", $node->getAttribute($attr));
+                                        if (!$isMatch) {
+                                            $break = true;
+                                        }
+                                    }
+                                } elseif ($node->getAttribute($attr) !== $val) {
+                                    $break = true;
+                                }
+                            } elseif (!$node->hasAttribute($attr)) {
+                                $break = true;
+                            }
+                            // PSEUDO CLASSES
+                        } elseif (strpos($s, ':') === 0) {
+                            // skip
+                            // TAG
+                        } else if (trim($s)) {
+                            if ($s !== '*') {
+                                if (isset($node->tagName)) {
+                                    if ($node->tagName !== $s) {
+                                        $break = true;
+                                    }
+                                } else if ($s === 'html' && !$this->isRoot($node)) {
+                                    $break = true;
+                                }
+                            }
+                            // AVOID NON-SIMPLE SELECTORS
+                        } else if (\in_array($s, $notSimpleSelector, true)) {
+                            $break = true;
+                        }
+                    }
                     if ($break) {
                         break;
                     }
@@ -986,14 +991,14 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         $XQuery .= $s;
                     }
                     // ID
-                } else if ($s[0] === '#') {
+                } else if (strpos($s, '#') === 0) {
                     if ($delimiterBefore) {
                         $XQuery .= '*';
                     }
 
                     $XQuery .= "[@id='" . substr($s, 1) . "']";
                     // ATTRIBUTES
-                } else if ($s[0] === '[') {
+                } elseif (strpos($s, '[') === 0) {
                     if ($delimiterBefore) {
                         $XQuery .= '*';
                     }
@@ -1025,7 +1030,7 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         }
                     }
                     // CLASSES
-                } else if ($s[0] === '.') {
+                } else if (strpos($s, '.') === 0) {
                     // thx wizDom ;)
                     if ($delimiterBefore) {
                         $XQuery .= '*';
@@ -1037,7 +1042,7 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         break;
                     }
                     // ~ General Sibling Selector
-                } else if ($s[0] === '~') {
+                } elseif (strpos($s, '~') === 0) {
                     $this->runQuery($XQuery);
                     $XQuery = '';
                     $this->elements = $this->siblings(substr($s, 1))->elements;
@@ -1045,7 +1050,7 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         break;
                     }
                     // + Adjacent sibling selectors
-                } else if ($s[0] === '+') {
+                } elseif (strpos($s, '+') === 0) {
                     $this->runQuery($XQuery);
                     $XQuery = '';
                     $subSelector = substr($s, 1);
@@ -1066,7 +1071,7 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
                         break;
                     }
                     // PSEUDO CLASSES
-                } else if ($s[0] === ':') {
+                } else if (strpos($s, ':') === 0) {
                     if ($XQuery) {
                         $this->runQuery($XQuery);
                         $XQuery = '';
@@ -2279,8 +2284,6 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
 
         return $this->newInstance();
     }
-
-    // TODO phpdoc; $oldAttr is result of hasAttribute, before any changes
 
     /**
      * @param null $selector
