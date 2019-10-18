@@ -330,21 +330,50 @@ class PhpQueryObject implements \Iterator, \Countable, \ArrayAccess
     }
 
     /**
+     * @param callable $callback
+     * @param array $stack
+     *
+     * @return array
+     */
+    protected static function filterByCallback(callable $callback, array $stack) : array
+    {
+        foreach ($stack as $index => $node) {
+            if ($callback($node)) {
+                continue;
+            }
+
+            unset($stack[$index]);
+        }
+
+        return $stack;
+    }
+
+    /**
      * @link http://docs.jquery.com/Traversing/filter
      *
-     * @param $selectors
+     * @param $selectorsOrCallback
      * @param bool $_skipHistory
      *
      * @return self
      *
      * @throws PhpQueryException
      */
-    public function filter($selectors, $_skipHistory = false) : self
+    public function filter($selectorsOrCallback, $_skipHistory = false) : self
     {
         if (!$_skipHistory) {
             $this->elementsBackup = $this->elements;
         }
 
+        if (is_callable($selectorsOrCallback)) {
+            $this->elements = static::filterByCallback($selectorsOrCallback, $this->stack());
+            if ($_skipHistory) {
+                return $this;
+            }
+
+            return $this->newInstance();
+        }
+
+        $selectors = &$selectorsOrCallback;
         $notSimpleSelector = [' ', '>', '~', '+', '/'];
         if (!is_array($selectors)) {
             $selectors = $this->parseSelector($selectors);
